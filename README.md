@@ -18,12 +18,12 @@ where
 
 `'NoSquare'` = do not change this
 
-`params` = structure to specify Morlet wavelet features with these fields,
+`params` = structure to specify analysis parameters with these fields,
 
-	`params.fc` = wavelet center frequency
-	`params.fb` = wavelet bandwidth
+	`params.fc` = Morlet wavelet center frequency
+	`params.fb` = Morelet wavelet bandwidth
 	`params.center_freq_desired` = the center frequency desired [Hz]
-	`params.threshold_type` = set to `mean`
+	`params.threshold_type` = set to `median`
 	`params.slowest_spindle_period = the lowest period we allow for a spindle
 
 Our recommended settings, which cover spindles from [9.5 to 16.5] Hz, are,
@@ -33,7 +33,7 @@ Our recommended settings, which cover spindles from [9.5 to 16.5] Hz, are,
 	params.fc                  = 0.5;
 	params.fb                  = 5;
 	params.center_freq_desired = 13;
-	params.threshold_type      = 'mean';
+	params.threshold_type      = 'median';
 	params.slowest_spindle_period = 1/9.5;
 
 
