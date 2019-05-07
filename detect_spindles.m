@@ -1,4 +1,4 @@
-function [spindle_det, keep_detection] = detect_spindles(current_data, data_filt, threshold, Fs, tthresh, segmDurBef, segmDurAft, slowest_spindle_period)
+function [spindle_det, keep_detection] = detect_spindles(current_data, data_filt, threshold, Fs, tthresh, segmDurBef, segmDurAft, params)
 
   current_data(isnan(current_data)) = 0;
 
@@ -40,8 +40,6 @@ function [spindle_det, keep_detection] = detect_spindles(current_data, data_filt
   spindle_det(1).sample = find(spin);
   spindle_det(1).spindle_count = sum(spin);
   %spindle_det(1).backgr_mean = signalmean(1);
-
-  fprintf(['Spindle count ' num2str(spindle_det(1).spindle_count) '\n'])
 
   %%%% Discard spindles that are closer than 2 sec to the boundaries
   bound_idx = find(spindle_det(1).sample + Fs*segmDurAft > length(current_data) | spindle_det(1).sample - Fs*segmDurAft < 1);
@@ -87,9 +85,9 @@ function [spindle_det, keep_detection] = detect_spindles(current_data, data_filt
     spindle_det(1).peakLoc([spindle_det(1).duration]<tthresh)     = [];
     spindle_det(1).startSample([spindle_det(1).duration]<tthresh) = [];
     spindle_det(1).endSample([spindle_det(1).duration]<tthresh)   = [];
-    spindle_det(1).duration([spindle_det(1).duration]<tthresh)    = [];
     spindle_det(1).peakFreq([spindle_det(1).duration]<tthresh)    = [];
-    spindle_det(1).SigmaPower([spindle_det(1).duration]<tthresh)    = [];
+    spindle_det(1).SigmaPower([spindle_det(1).duration]<tthresh)  = [];
+    spindle_det(1).duration([spindle_det(1).duration]<tthresh)    = [];
     spindle_det(1).spindle_count = length(spindle_det(1).duration);
     
     %% Discard spindles that overlap
@@ -109,9 +107,14 @@ function [spindle_det, keep_detection] = detect_spindles(current_data, data_filt
         
     end
     
+    fprintf(['Spindle count ' num2str(spindle_det(1).spindle_count) '\n'])
+    
     %% Discard spindles that co-occur with a spike.
-    spike_threshold = 80*1e-6;
+    %spike_threshold = 80*1e-6;
     %slowest_spindle_period  = 1/9.5;
+    spike_threshold        = params.spike_threhsold;
+    slowest_spindle_period = params.slowest_spindle_period;
+    
     fastest_spindle_period  = 1/35;
     
     keep_detection = zeros(spindle_det(1).spindle_count,1);

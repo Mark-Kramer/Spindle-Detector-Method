@@ -31,7 +31,16 @@ for x=1:size(C_dur,1) % complete these operations for every segment in the data
     else
         
         %% Step 2: Obtain the complex morlet wavelet coefficients
-        Num_scales = 60;
+        
+        switch round(Fs)
+            case 1024
+                Num_scales = 200;
+            case 407
+                Num_scales = 60;
+            otherwise
+                fprintf('Call Mark ... ')
+                return
+        end
         scales     = (1:Num_scales); % define vector of scales to use for wavelet tranform
         coefs      = cwt(spindle,scales,'cmor1-1.5'); % Transform using complex Morlet 1-1.5
         

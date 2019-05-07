@@ -102,7 +102,7 @@ for ch=1:nchannel
         threshold  = signalmean.*ampl_factor;
     
         %% Detect spindles
-        [spindle_det0, keep_detection] = detect_spindles(current_data, data_filt, threshold, Fs, tthresh, segmDurBef, segmDurAft, params.slowest_spindle_period);
+        [spindle_det0, keep_detection] = detect_spindles(current_data, data_filt, threshold, Fs, tthresh, segmDurBef, segmDurAft, params);
         
         fprintf(['Num of bad detections is ' num2str(sum(keep_detection==0)) ', threshold = ' num2str(threshold, 4) '\n'])
             
