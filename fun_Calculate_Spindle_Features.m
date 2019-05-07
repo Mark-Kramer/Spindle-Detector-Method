@@ -35,11 +35,9 @@ for x=1:size(C_dur,1) % complete these operations for every segment in the data
         switch round(Fs)
             case 1024
                 Num_scales = 200;
-            case 407
-                Num_scales = 60;
+                fprintf(['Be careful about sampling rate! \n'])
             otherwise
-                fprintf('Call Mark ... ')
-                return
+                Num_scales = 60;
         end
         scales     = (1:Num_scales); % define vector of scales to use for wavelet tranform
         coefs      = cwt(spindle,scales,'cmor1-1.5'); % Transform using complex Morlet 1-1.5
