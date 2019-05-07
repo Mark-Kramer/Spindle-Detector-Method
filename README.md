@@ -25,6 +25,7 @@ where
 	`params.center_freq_desired` = the center frequency desired [Hz]
 	`params.threshold_type` = set to `median`
 	`params.slowest_spindle_period = the lowest period we allow for a spindle
+	`params.spike_threhsold        = the largest peak-to-trough changes we allow for a spindle.
 
 Our recommended settings, which cover spindles from [9.5 to 16.5] Hz, are,
 
@@ -34,6 +35,7 @@ Our recommended settings, which cover spindles from [9.5 to 16.5] Hz, are,
 	params.fb                  = 5;
 	params.center_freq_desired = 13;
 	params.threshold_type      = 'median';
+	params.spike_threhsold        = 80*1e-6;
 	params.slowest_spindle_period = 1/9.5;
 
 
