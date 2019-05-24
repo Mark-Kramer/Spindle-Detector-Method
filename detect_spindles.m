@@ -1,4 +1,4 @@
-function [spindle_det, keep_detection] = detect_spindles(current_data, data_filt, threshold, Fs, tthresh, segmDurBef, segmDurAft, params)
+function [spindle_det, keep_detection] = detect_spindles(current_data, Data, data_filt, threshold, Fs, tthresh, segmDurBef, segmDurAft, params)
 
   current_data(isnan(current_data)) = 0;
 
@@ -63,7 +63,7 @@ function [spindle_det, keep_detection] = detect_spindles(current_data, data_filt
     for jj = 1:numSpindles
         startSmp = max(spindle_det(1).sample(jj)-Fs*segmDurBef+1,1);
         endSmp = min(spindle_det(1).sample(jj)+Fs*segmDurAft,length(current_data));
-        segms{jj} = current_data(startSmp:endSmp)';
+        segms{jj} = Data(startSmp:endSmp)';
     end
     
     % get rid of truncated segments
@@ -116,12 +116,13 @@ function [spindle_det, keep_detection] = detect_spindles(current_data, data_filt
     slowest_spindle_period = params.slowest_spindle_period;
     
     fastest_spindle_period  = 1/35;
+    MinPeakDistance         = ceil(fastest_spindle_period * Fs);
     
     keep_detection = zeros(spindle_det(1).spindle_count,1);
     for k=1:spindle_det(1).spindle_count
         d0 = data_filt(spindle_det(1).startSample(k):spindle_det(1).endSample(k));
-        [pos_pks, pos_locs] = findpeaks( d0, 'MinPeakDistance', 10, 'MinPeakProminence',2e-6);
-        [neg_pks, neg_locs] = findpeaks(-d0, 'MinPeakDistance', 10, 'MinPeakProminence',2e-6);
+        [pos_pks, pos_locs] = findpeaks( d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',2e-6);
+        [neg_pks, neg_locs] = findpeaks(-d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',2e-6);
         neg_pks = -neg_pks;
         % Compare each peak to subsequent trough.
         ht_forward = NaN(size(pos_locs));
@@ -158,19 +159,18 @@ function [spindle_det, keep_detection] = detect_spindles(current_data, data_filt
             keep_detection(k) = 1;
         end
         
-        %         t0 = (1:length(d0))/Fs;
-        %         plot(t0,d0)
-        %         hold on
-        %         plot(pos_locs/Fs, pos_pks, 'o')
-        %         plot(neg_locs/Fs, neg_pks, 'o')
-        %         hold off
-        %         axis tight
-        %         xlabel(['Time [s]'])
-        %         title([  'Too few cycles? ' num2str(length(pos_pks) < min_num_cycles) ...
-        %             ', Too big? ' num2str(any([ht_forward, ht_backward] > spike_threshold)) ...
-        %             ', Fano? ' num2str(fano) ...
-        %             ', Keep it? ' num2str(keep_detection(k))])
-
+%                 t0 = (1:length(d0))/Fs;
+%                 plot(t0,d0)
+%                 hold on
+%                 plot(pos_locs/Fs, pos_pks, 'o')
+%                 plot(neg_locs/Fs, neg_pks, 'o')
+%                 hold off
+%                 axis tight
+%                 xlabel(['Time [s]'])
+%                 title([  'Too few cycles? ' num2str(length(pos_pks) < min_num_cycles) ...
+%                     ', Too big? ' num2str(any([ht_forward, ht_backward] > spike_threshold)) ...
+%                     ', Fano? ' num2str(fano) ...
+%                     ', Keep it? ' num2str(keep_detection(k))])
     end
   end
 end
