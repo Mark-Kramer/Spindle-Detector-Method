@@ -87,6 +87,7 @@ for ch=1:nchannel
     %% Get data from a channel.
     current_data = Data2(:,ch);
     data_filt    = DataFilt(ch,:);
+    data_raw     = Data(ch,:)';
     keep_detection = 0;
     
     while any(keep_detection == 0)
@@ -102,13 +103,14 @@ for ch=1:nchannel
         threshold  = signalmean.*ampl_factor;
     
         %% Detect spindles
-        [spindle_det0, keep_detection] = detect_spindles(current_data, Data', data_filt, threshold, Fs, tthresh, segmDurBef, segmDurAft, params);
+        [spindle_det0, keep_detection] = detect_spindles(current_data, data_raw, data_filt, threshold, Fs, tthresh, segmDurBef, segmDurAft, params);
         
         fprintf(['Num of bad detections is ' num2str(sum(keep_detection==0)) ', threshold = ' num2str(threshold, 4) '\n'])
             
         for k=1:length(keep_detection)                  % if there are detections to ignore, then set data at those times to NaN, and repeat.
             if keep_detection(k) == 0 
                 current_data(spindle_det0.startSample(k):spindle_det0.endSample(k)) = NaN;
+                    data_raw(spindle_det0.startSample(k):spindle_det0.endSample(k)) = NaN;
             end
         end
         

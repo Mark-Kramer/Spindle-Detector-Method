@@ -1,6 +1,7 @@
-function [spindle_det, keep_detection] = detect_spindles(current_data, Data, data_filt, threshold, Fs, tthresh, segmDurBef, segmDurAft, params)
+function [spindle_det, keep_detection] = detect_spindles(current_data, data_raw, data_filt, threshold, Fs, tthresh, segmDurBef, segmDurAft, params)
 
   current_data(isnan(current_data)) = 0;
+  data_raw(isnan(data_raw))         = 0;
 
   spindle_det = [];
 
@@ -63,7 +64,7 @@ function [spindle_det, keep_detection] = detect_spindles(current_data, Data, dat
     for jj = 1:numSpindles
         startSmp = max(spindle_det(1).sample(jj)-Fs*segmDurBef+1,1);
         endSmp = min(spindle_det(1).sample(jj)+Fs*segmDurAft,length(current_data));
-        segms{jj} = Data(startSmp:endSmp)';
+        segms{jj} = data_raw(startSmp:endSmp)';
     end
     
     % get rid of truncated segments
