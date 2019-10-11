@@ -1,15 +1,27 @@
-% Data in Oscillograph format
-%   + data = [electrodes, time]
-%   + hdr.info.sfreq
-%   + hdr.info.ch_names
+% Compute the probability of a spindle in 0.5 s intervals.
+%
+% INPUTS:
+%  data = [channels, time]
+%  hdr  = structure that MUST HAVE ...
+%       hdr.info.sfreq      = sampling frequency [Hz]
+%       hdr.info.ch_names   = cell of channel names.
+%
+% OUTPUT:
+%  spindle_probabilities = [channels] structure with ...
+%                       .label       = channel name
+%                       .prob        = probabiltiy of a spindle at time t.
+%                       .t           = time t [s]
+%                       .Fs          = sampling frequency [Hz]
+%
+% The output is typically an input to function LSM_spindle_detections.m
 
 function spindle_probabilities = LSM_spindle_probabilities(data, hdr)
 
-  feature = 'log(9-15)+log(theta)+log(fano)';               % Set the feature. ADVANCED = alter this
+  feature = 'log(9-15)+log(theta)+log(fano)';                           % Set the feature. Don't alter this unless you know what you're doing.
                                             
   fprintf(['Detecting spindles with features ' feature ' \n'])                                 
                                             
-  % Use an existing likelihood file trained on Chu-lab BECTS data
+  % Use an existing likelihood file trained on Chu-lab BECTS data. Don't alter this unless you know what you're doing.
   load('likelihood_and_transition_matrix_LSM_LOO_min_manual_duration_0_0.5_0.1_pt999_PDF_use_all_data_compute_all_features_chu.mat')
   fprintf(['... using likelihood Chu-lab-BECTS from all patients. \n'])
   
@@ -43,27 +55,25 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr)
         
       if ~isempty(i0)
           
-          d = data(i0,:);
+          d = data(i0,:);                                                   % Get channel to analyze.  
 
           if any(isnan(d))
               fprintf(['Does not work on data with NaNs \n'])
               break
           end
           
-          % Get the filtered data.
-          dfilt  = filtfilt(bpFilt, d);   % Filter the unclipped data,
+          dfilt  = filtfilt(bpFilt, d);                                     % Filter the data.
           
-          window_size = round(params.window_duration*Fs);
-          step_size   = round(params.step_duration*Fs);
-          fprintf(['... window size ' num2str(params.window_duration) ' s, Step size = ' num2str(params.step_duration) ' s \n'])
          
           % Initialize
           p = [0.5; 0.5];
           [prob, t] = deal([]);
+          window_size = round(params.window_duration*Fs);
+          step_size   = round(params.step_duration*Fs);
           time_to_analyze = length(d)-window_size;
 
           i=1;
-          while i < time_to_analyze
+          while i < time_to_analyze                                         % For each time interval, ...
               
               % Get the power features in this interval.
               interval  = i:i+window_size-1;
@@ -101,6 +111,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr)
               % Normalize 1 step prediction.
               p = p / sum(p);
               
+              % Select feature and compute posterior.
               switch feature
                   
                   case 'log(9-15)+log(theta)+log(fano)'
@@ -124,7 +135,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr)
                                       *p(2)];
                       end
                       
-                      %%%% Narrowband analysis ---------------------------------------------------------------------------------------------------------------
+                  %%%% Narrowband analysis ---------------------------------------------------------------------------------------------------------------
                       
                   case 'log(9-15)+log(theta)+fano+narrowband'
                       start_frequency = 11;
