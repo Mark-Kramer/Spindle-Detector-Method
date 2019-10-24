@@ -62,6 +62,12 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr)
               break
           end
           
+          extent = max(d) - min(d);
+          if extent > 300e-6 || extent < 10e-6
+              fprintf(['Are your data in microvolts? If not, change MinPeakProminence in findpeaks(...) in code \n'])
+              break
+          end
+          
           dfilt  = filtfilt(bpFilt, d);                                     % Filter the data.
           
          
