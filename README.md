@@ -19,6 +19,10 @@ Step (1) is slow, and step (2) is fast.
 
 **The method is configured to run on Chu-lab BECTS data.**
 
+----
+
+## When the code crashes
+
 If your code stops, and you encounter this returned text:
 
 `Are your data in microvolts? If not, set options.MinPeakProminence`
