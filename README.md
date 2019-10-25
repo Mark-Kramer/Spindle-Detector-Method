@@ -20,12 +20,29 @@ Step (1) is slow, and step (2) is fast.
 **The method is configured to run on Chu-lab BECTS data.**
 
 ----
+## Preprocessing steps
+
+	Downsample the data:
+
+		d0 = data(k,:);					Get data from one sensor.
+
+		d0 = decimate(d0,d_factor);			Apply `decimate` to downsample the data.
+		
+Repeat the steps above for all sensors in `data`.
+
+		hdr.info.sfreq = hdr.info.sfreq / d_factor;	Remember to adjust the sampling rate.	
+
+For example, for an original sampling rate of 1024 Hz, set `d_factor = 4`. The new sampling rate is 256 Hz.
+
+----
 
 ## To visualize spindles
 
 `LSM_spindle_visualizer(data, hdr, spindle_det, channel)`
 
 ![alt text](https://github.com/Mark-Kramer/Spindle-Detector-Method/blob/master/example_spindles.png)
+
+----
 
 ## When the code crashes (`Are your data in microvolts?`)
 
