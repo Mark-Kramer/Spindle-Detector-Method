@@ -19,7 +19,18 @@ Step (1) is slow, and step (2) is fast.
 
 **The method is configured to run on Chu-lab BECTS data.**
 
-To run other types of data, talk to Cat or Mark first. 
+----
 
+## When the code crashes (`Are your data in microvolts?`)
 
+If your code stops, and you encounter this returned text:
 
+`Are your data in microvolts? If not, set options.MinPeakProminence`
+
+Then you must add a **third input** to `LSM_spindle_probabilities`:
+
+1. `spindle_prob = LSM_spindle_probabilities(d, hdr, options);`
+
+where
+
+`options.minPeakProminence` indicates how much the peak must "stand out" to be identified. See [here](https://www.mathworks.com/help/signal/ref/findpeaks.html#buff2uu).
