@@ -19,6 +19,12 @@ Step (1) is slow, and step (2) is fast.
 
 **The method is configured to run on Chu-lab BECTS data.**
 
+## To visualize spindles
+
+LSM_spindle_visualizer(data, hdr, spindle_det, channel)
+
+
+
 ----
 
 ## When the code crashes (`Are your data in microvolts?`)
