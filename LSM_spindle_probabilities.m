@@ -15,10 +15,17 @@
 %
 % The output is typically an input to function LSM_spindle_detections.m
 
-function spindle_probabilities = LSM_spindle_probabilities(data, hdr)
+function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
 
   feature = 'log(9-15)+log(theta)+log(fano)';                           % Set the feature. Don't alter this unless you know what you're doing.
-                                            
+
+  if nargin==2 || isempty(options.minPeakProminence)
+      MinPeakProminence = 2e-6;                                         % Default value for HD scalp EEG.
+      options.minPeakProminence = [];
+  else
+      MinPeakProminence = options.minPeakProminence;
+  end
+  
   fprintf(['Detecting spindles with features ' feature ' \n'])                                 
                                             
   % Use an existing likelihood file trained on Chu-lab BECTS data. Don't alter this unless you know what you're doing.
@@ -63,8 +70,8 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr)
           end
           
           extent = max(d) - min(d);
-          if extent > 300e-6 || extent < 10e-6
-              fprintf(['Are your data in microvolts? If not, change MinPeakProminence in findpeaks(...) in code \n'])
+          if isempty(options.minPeakProminence) && (extent > 300e-6 || extent < 10e-6)
+              fprintf(['Are your data in microvolts? If not, set options.MinPeakProminence \n'])
               break
           end
           
