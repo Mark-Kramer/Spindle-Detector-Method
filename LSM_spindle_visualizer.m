@@ -23,6 +23,7 @@ function LSM_spindle_visualizer(data, hdr, spindle_det, channel)
   
   plot(t, data(i0,:), 'k')
   xlabel('Time [s]')
+  title(channel)
 
   ax = axis;                                            % Indicate each detection with a red box.
   h0 = (ax(4)-ax(3));
