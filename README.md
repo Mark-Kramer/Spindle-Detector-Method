@@ -21,7 +21,7 @@ Step (1) is slow, and step (2) is fast.
 
 ----
 
-## When the code crashes
+## When the code crashes (`Are your data in microvolts?`)
 
 If your code stops, and you encounter this returned text:
 
