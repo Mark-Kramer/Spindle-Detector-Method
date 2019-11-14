@@ -48,6 +48,14 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
       'StopbandAttenuation2', 20, ...
       'SampleRate', Fs);
   
+  % Make sure to use the MATLAB version of findpeaks.
+  current_dir = pwd;                                                % Get current directory.
+  s = regexp(path, pathsep, 'split');                               % Create list of all paths.
+  i0 = find(endsWith(s, 'toolbox/signal/signal'));                  % Find path location of 'findpeaks'.
+  cd(s{i0})                                                         % Go there,
+  findpeaks_vMAT = str2func('findpeaks');                           % ... and point to 'findpeaks' function.
+  cd(current_dir);                                                  % Return to current directory.
+  
   [spindle_probabilities] = deal([]);
   counter=1;
     
@@ -103,8 +111,8 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
               d0 = detrend(d0);
               fastest_spindle_period  = 1/35;
               MinPeakDistance         = ceil(fastest_spindle_period * Fs);
-              [~, pos_locs] = findpeaks( d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',2e-6);
-              [~, neg_locs] = findpeaks(-d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',2e-6);
+              [~, pos_locs] = findpeaks_vMAT( d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',2e-6);
+              [~, neg_locs] = findpeaks_vMAT(-d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',2e-6);
               
               if length(pos_locs)>1 && length(neg_locs)>1     % if you have more than 1 peak, and more than 1 trough,
                   ISI  = [diff(pos_locs) diff(neg_locs)];     % ... then compute ISI for each, and average.
