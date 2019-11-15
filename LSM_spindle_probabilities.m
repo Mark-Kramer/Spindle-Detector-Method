@@ -73,8 +73,11 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
           d = data(i0,:);                                                   % Get channel to analyze.  
 
           if any(isnan(d))
-              fprintf(['Does not work on data with NaNs \n'])
-              break
+              fprintf(['... detected NaNs in data, replacing with 0s for filter only. \n'])
+              d0 = d; d0(isnan(d0))=0;
+              dfilt = filtfilt(bpFilt, d0);
+          else
+              dfilt  = filtfilt(bpFilt, d);                                     % Filter the data.
           end
           
           extent = max(d) - min(d);
@@ -82,10 +85,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
               fprintf(['Are your data in microvolts? If not, set options.MinPeakProminence \n'])
               break
           end
-          
-          dfilt  = filtfilt(bpFilt, d);                                     % Filter the data.
-          
-         
+
           % Initialize
           p = [0.5; 0.5];
           [prob, t] = deal([]);
