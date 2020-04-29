@@ -111,8 +111,8 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
               d0 = detrend(d0);
               fastest_spindle_period  = 1/35;
               MinPeakDistance         = ceil(fastest_spindle_period * Fs);
-              [~, pos_locs] = findpeaks_vMAT( d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',2e-6);
-              [~, neg_locs] = findpeaks_vMAT(-d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',2e-6);
+              [~, pos_locs] = findpeaks_vMAT( d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',MinPeakProminence);
+              [~, neg_locs] = findpeaks_vMAT(-d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',MinPeakProminence);
               
               if length(pos_locs)>1 && length(neg_locs)>1     % if you have more than 1 peak, and more than 1 trough,
                   ISI  = [diff(pos_locs) diff(neg_locs)];     % ... then compute ISI for each, and average.
