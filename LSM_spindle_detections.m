@@ -10,13 +10,20 @@
 %     	      .label       = channel label.
 %             .Fs          = sampling frequency [Hz].
 
-function [spindle_det] = LSM_spindle_detections(spindle_probabilities)
+function [spindle_det] = LSM_spindle_detections(spindle_probabilities, varargin)
 
-  % Don't alter this unless you know what you're doing. -------------------                                   
+  % Don't alter this unless you know what you're doing. -------------------
   prob_threshold = 0.95;
   
+  if nargin > 1
+      
+      alter_threshold = find(strcmp(varargin, 'prob_threshold'));
+      if ~isempty(alter_threshold); prob_threshold = varargin{alter_threshold+1}; end
+      
+  end
+    
   min_spindle_duration    = 0.5;    % [s]
-  max_spindle_duration    = 2;      % [s]
+  max_spindle_duration    = 10000000;      % [s]
   blankout_duration       = 1;      % [s]
   spindle_separation_threshold = 1; % [s]
   % -----------------------------------------------------------------------
@@ -68,6 +75,15 @@ function [spindle_det] = LSM_spindle_detections(spindle_probabilities)
       long_enough        = find(detection_duration >= min_spindle_duration);
       startTimes         = startTimes(long_enough);
       endTimes           = endTimes(long_enough);
+%       min_spindle_length = round(min_spindle_duration / (t(2)-t(1)));
+%       detection_lengths  = endIndices - startIndices;
+%       too_short          = find(detection_lengths < min_spindle_length);
+%       for j=1:length(too_short)                                         % For each too short detection,
+%           index   = too_short(j);
+%           i_begin = startIndices(index);                                % ... find starting index,
+%           i_end   = endIndices(index);     % ... and set ending index to start + max_spindle_duration.
+%           detections( i_begin:i_end ) = 0;                              % This will form a new (clipped) detection,
+%       end
       
       %%%% 4) Merge detections too close. ----------------------------- % InterSpindle Interval
       ISI       = [nan, startTimes(2:end) - endTimes(1:end-1)];         % ... Start time of next spindle - End time of this spindle.
@@ -81,6 +97,21 @@ function [spindle_det] = LSM_spindle_detections(spindle_probabilities)
       startTimes = startTimes(isfinite(startTimes));                    %  Keep only spindles not too close.
       endTimes   = endTimes(isfinite(endTimes));
   
+%       %%%% 2) Clip detections too long. -----------------------------------
+%       detection_length_threshold = round(max_spindle_duration / (t(2)-t(1)));
+%       blankout_length            = round(blankout_duration    / (t(2)-t(1)));
+%       [ones_mask, zeros_mask] = deal(zeros(size(detections)));
+%       too_long = find(detection_length > detection_length_threshold);   % Find too long detections > max_spindle_duration.
+%       for j=1:length(too_long)                                          % For each too long detection,
+%           index = too_long(j);
+%           i_begin = startIndices(index);                                % ... find starting index,
+%           i_end   = startIndices(index)+detection_length_threshold;     % ... and set ending index to start + max_spindle_duration.
+%           ones_mask( i_begin:i_end-1) = 1;                              % This will form a new (clipped) detection,
+%           zeros_mask(i_end  :i_end+blankout_length) = 1;                % ... and we blankout any subsequent detections for blankout duration.
+%       end
+%       detections( find(ones_mask) ) = 1;                                % Update new (clipped) detections,
+%       detections( find(zeros_mask)) = 0;                                % ... and include new blankouts.
+      
       %%%% 5) Return detections for this elec. ----------------------------
       Fs = spindle_probabilities(k).Fs;
       spindle_det(k).startSample = round(startTimes * Fs);
