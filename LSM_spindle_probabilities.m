@@ -5,6 +5,9 @@
 %  hdr  = structure that MUST HAVE ...
 %       hdr.info.sfreq      = sampling frequency [Hz]
 %       hdr.info.ch_names   = cell of channel names.
+%  options
+%       LSM_spindle_probabilities(data, hdr, 'MinPeakPromience', X) sets MinPeakPromience to X.
+%       LSM_spindle_probabilities(data, hdr, 'StartFrequency', X, 'StopFrequency', Y) sets spindle analysis to frequencies [X,Y].
 %
 % OUTPUT:
 %  spindle_probabilities = [channels] structure with ...
@@ -17,25 +20,30 @@
 
 function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
 
-  feature = 'log(9-15)+log(theta)+log(fano)';                           % Set the feature. Don't alter this unless you know what you're doing.
-
-  if nargin==2 || isempty(options.minPeakProminence)
-      MinPeakProminence = 2e-6;                                         % Default value for HD scalp EEG.
-      options.minPeakProminence = [];
-  else
-      MinPeakProminence = options.minPeakProminence;
+  MinPeakProminence = 2e-6;                                         % Default value for HD scalp EEG.
+  start_frequency = [];                                             % 9-15 Hz analysis
+  stop_frequency  = [];
+  feature = 'broadband';
+  
+  if nargin>2                                                       % ---- Adjust default settings. ----
+      if ~isempty(find(strcmp(options, 'MinPeakPromience')))        % Set minPeakProminence for Fano step.
+          i0 = find(strcmp(options, 'MinPeakPromience'));
+          MinPeakProminence = options{i0+1};
+      else
+          MinPeakProminence = 2e-6;
+      end
+          
+      if ~isempty(find(strcmp(options, 'StartFrequency')))          % Set frequencies for narrowband analsysis.
+          i0 = find(strcmp(options, 'StartFrequency'));
+          start_frequency = options{i0+1};
+          i0 = find(strcmp(options, 'StopFrequency'));
+          stop_frequency  = options{i0+1};
+          feature = 'narrowband';
+      end
   end
-  
-  fprintf(['Detecting spindles with features ' feature ' \n'])                                 
-                                            
-  % Use an existing likelihood file trained on Chu-lab BECTS data. Don't alter this unless you know what you're doing.
-  load('likelihood_and_transition_matrix_LSM_LOO_min_manual_duration_0_0.5_0.1_pt999_PDF_use_all_data_compute_all_features_chu.mat')
-  fprintf(['... using likelihood Chu-lab-BECTS from all patients. \n'])
-  
-  %     % Use an existing likelihood file trained on Manoach-lab data.
-  %     load('likelihood_and_transition_matrix_LSM_LOO_min_manual_duration_0_0.5_0.1_pt999_PDF_use_all_data_compute_all_features_manoach.mat')
-  %     fprintf(['... using likelihood Manoach-lab from all patients. \n'])
-  
+
+  fprintf(['Detecting spindles with spectral features: ' feature ' ' num2str(start_frequency) ' ' num2str(stop_frequency) '\n'])                                 
+                                             
   % Build filter 3-25 Hz.
   Fs = hdr.info.sfreq;
   bpFilt = designfilt('bandpassfir', ...
@@ -55,14 +63,14 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
   cd(s{i0})                                                         % Go there,
   findpeaks_vMAT = str2func('findpeaks');                           % ... and point to 'findpeaks' function.
   cd(current_dir);                                                  % Return to current directory.
-  
-  [spindle_probabilities] = deal([]);
-  counter=1;
-    
+
   electrodes_to_analyze = hdr.info.ch_names;
+  K = length(electrodes_to_analyze);  
+  spindle_probabilities = struct('label',cell(K,1),'prob',cell(K,1), 't',cell(K,1), 'Fs',cell(K,1));
   
-  for i_channel = 1:length(electrodes_to_analyze)
+  for i_channel = 1:K                                               % NOTE: This can be parfor
     
+      [likelihood, mu, params, sigma, transition_matrix] = load_inputs();  
       channel = electrodes_to_analyze{i_channel};
       fprintf(['... ' num2str(channel) '(' num2str(i_channel) ' of ' num2str(length(electrodes_to_analyze)) ') \n'])
       
@@ -81,7 +89,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
           end
           
           extent = max(d) - min(d);
-          if isempty(options.minPeakProminence) && (extent > 300e-6 || extent < 10e-6)
+          if (MinPeakProminence == 2e-6) && (extent > 300e-6 || extent < 10e-6)
               fprintf(['Are your data in microvolts? If not, set options.MinPeakProminence \n'])
               break
           end
@@ -125,6 +133,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
               else
                   fano=nan;                                   % otherwise, not enough ISI, so fano=nan.
               end
+              instant_freq = 1/( mean(ISI)/Fs );              % Compute instantaneous freq.
               
               % Get the 1 step prediction.
               p = transition_matrix * p;
@@ -135,7 +144,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
               % Select feature and compute posterior.
               switch feature
                   
-                  case 'log(9-15)+log(theta)+log(fano)'
+                  case 'broadband'
                       if isnan(log(fano)) || ~isfinite(log(fano))
                           posterior = [likelihood(log(pow_9_15),  mu.log_P_9_15_1, sigma.log_P_9_15_1, 1)...
                                       *likelihood(log(pow_theta), mu.log_P_theta1, sigma.log_P_theta1, 1)...
@@ -158,9 +167,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
                       
                   %%%% Narrowband analysis ---------------------------------------------------------------------------------------------------------------
                       
-                  case 'log(9-15)+log(theta)+fano+narrowband'
-                      start_frequency = 11;
-                      stop_frequency  = 13;
+                  case 'narrowband'
                       if isnan(log(fano)) || ~isfinite(log(fano))
                           posterior = [likelihood(log(pow_9_15),  mu.log_P_9_15_1, sigma.log_P_9_15_1, 1)...
                                       *likelihood(log(pow_theta), mu.log_P_theta1, sigma.log_P_theta1, 1)...
@@ -198,14 +205,31 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
               i = i + step_size;
           end
           
-          spindle_probabilities(counter).label       = channel;     % save results for this channel
-          spindle_probabilities(counter).prob        = prob(1,:);
-          spindle_probabilities(counter).t           = t;
-          spindle_probabilities(counter).Fs          = Fs;
+          spindle_probabilities(i_channel).label       = channel;     % save results for this channel
+          spindle_probabilities(i_channel).prob        = prob(1,:);
+          spindle_probabilities(i_channel).t           = t;
+          spindle_probabilities(i_channel).Fs          = Fs;
       end
-      
-      counter=counter+1;
-      
+            
   end
   
+end 
+
+function [likelihood, mu, params, sigma, transition_matrix] = load_inputs()
+  % Use default likelihood file (trained on Chu-lab CECTS data). Don't alter this unless you know what you're doing.
+  load('likelihood_and_transition_matrix_LSM_LOO_min_manual_duration_0_0.5_0.1_pt999_PDF_use_all_data_compute_all_features_chu.mat')
+  fprintf(['... using default likelihood file. \n'])
+  
+  % Use alternative likelihood file trained on Manoach-lab data.
+  %load('likelihood_and_transition_matrix_LSM_LOO_min_manual_duration_0_0.5_0.1_pt999_PDF_use_all_data_compute_all_features_manoach.mat')
+  %fprintf(['... using alternative likelihood file. \n'])
 end
+
+function [L0] = narrowband_likelihood(f, range)
+  faxis = (0:0.1:100);
+  L     = zeros(size(faxis));
+  i0    = find(faxis >= range(1) & faxis <= range(2));
+  L(i0) = 1;
+  [~, imn] = min(abs(faxis - f));
+  L0    = L(imn);
+end 
