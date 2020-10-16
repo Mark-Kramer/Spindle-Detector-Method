@@ -7,30 +7,15 @@ The latent state (LS) detector runs in two steps:
 
 where
 
-`d` = the data, [channels x timpepoints]
+`d` = the data, [channels x time points]
 
-`hdr` = structure that MUST HAVE:
+`hdr` = structure that **must have**:
 
-	`hdr.info.sfreq`      = sampling frequency (Hz).
+`hdr.info.sfreq`      = sampling frequency (Hz).
   
-	`hdr.info.ch_names`   = cell of channel names.
+`hdr.info.ch_names`   = cell of channel names.
 
-Step (1) is slow, and step (2) is fast.
-
-----
-## Preprocessing steps (optional)
-
-	Downsample the data:
-
-		d0 = data(k,:);					Get data from one sensor.
-
-		d0 = decimate(d0,d_factor);			Apply `decimate` to downsample the data.
-		
-Repeat the steps above for all sensors in `data`.
-
-		hdr.info.sfreq = hdr.info.sfreq / d_factor;	Remember to adjust the sampling rate.	
-
-For example, for an original sampling rate of 1024 Hz, set `d_factor = 4`. The new sampling rate is 256 Hz.
+Step (1) is slow, step (2) is fast.
 
 ----
 
@@ -48,10 +33,8 @@ If your code stops, and you encounter this returned text:
 
 `Are your data in microvolts? If not, set options.MinPeakProminence`
 
-Then you must add a **third input** to `LSM_spindle_probabilities`:
+Then you must add a **third and fourth input** to `LSM_spindle_probabilities`:
 
-1. `spindle_prob = LSM_spindle_probabilities(d, hdr, options);`
+`spindle_prob = LSM_spindle_probabilities(data, hdr, 'MinPeakPromience', X)`
 
-where
-
-`options.minPeakProminence` indicates how much the peak must "stand out" to be identified. See [here](https://www.mathworks.com/help/signal/ref/findpeaks.html#buff2uu).
+where `X` is a number indicating how much the peak must "stand out" to be identified. See [here](https://www.mathworks.com/help/signal/ref/findpeaks.html#buff2uu).
