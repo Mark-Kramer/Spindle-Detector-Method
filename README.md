@@ -1,6 +1,6 @@
 # Spindle-Detector-Method
 
-The latent state model (LSM) detector runs in two steps:
+The latent state (LS) detector runs in two steps:
 
 1. `spindle_prob = LSM_spindle_probabilities(d, hdr);`
 2. `spindle_det  = LSM_spindle_detections(spindle_prob);`
@@ -17,10 +17,8 @@ where
 
 Step (1) is slow, and step (2) is fast.
 
-**The method is configured to run on Chu-lab BECTS data.**
-
 ----
-## Preprocessing steps
+## Preprocessing steps (optional)
 
 	Downsample the data:
 
