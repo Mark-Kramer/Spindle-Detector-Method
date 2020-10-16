@@ -23,7 +23,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
   MinPeakProminence = 2e-6;                                         % Default value for HD scalp EEG.
   start_frequency = [];                                             % 9-15 Hz analysis
   stop_frequency  = [];
-  feature = 'broadband';
+  feature = 'broadband';                                            % ... is broadband.
   
   if nargin>2                                                       % ---- Adjust default settings. ----
       if ~isempty(find(strcmp(options, 'MinPeakPromience')))        % Set minPeakProminence for Fano step.
@@ -78,14 +78,14 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
         
       if ~isempty(i0)
           
-          d = data(i0,:);                                                   % Get channel to analyze.  
+          d = data(i0,:);                                           % Get channel to analyze.  
 
           if any(isnan(d))
               fprintf(['... detected NaNs in data, replacing with 0s for filter only. \n'])
               d0 = d; d0(isnan(d0))=0;
               dfilt = filtfilt(bpFilt, d0);
           else
-              dfilt  = filtfilt(bpFilt, d);                                     % Filter the data.
+              dfilt  = filtfilt(bpFilt, d);                         % Filter the data.
           end
           
           extent = max(d) - min(d);
@@ -102,7 +102,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
           time_to_analyze = length(d)-window_size;
 
           i=1;
-          while i < time_to_analyze                                         % For each time interval, ...
+          while i < time_to_analyze                                  % For each time interval, ...
               
               % Get the power features in this interval.
               interval  = i:i+window_size-1;
@@ -122,18 +122,18 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
               [~, pos_locs] = findpeaks_vMAT( d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',MinPeakProminence);
               [~, neg_locs] = findpeaks_vMAT(-d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',MinPeakProminence);
               
-              if length(pos_locs)>1 && length(neg_locs)>1     % if you have more than 1 peak, and more than 1 trough,
-                  ISI  = [diff(pos_locs) diff(neg_locs)];     % ... then compute ISI for each, and average.
+              if length(pos_locs)>1 && length(neg_locs)>1           % if you have more than 1 peak, and more than 1 trough,
+                  ISI  = [diff(pos_locs) diff(neg_locs)];           % ... then compute ISI for each, and average.
               else
-                  ISI  = nan;                                 % otherwise, not enough points, so ISI = nan.
+                  ISI  = nan;                                       % otherwise, not enough points, so ISI = nan.
               end
               
-              if length(ISI)>1                                % if you have more than 1 ISI,
-                  fano = var(ISI)/mean(ISI);                  % ... then compute the fano
+              if length(ISI)>1                                      % if you have more than 1 ISI,
+                  fano = var(ISI)/mean(ISI);                        % ... then compute the fano factor.
               else
-                  fano=nan;                                   % otherwise, not enough ISI, so fano=nan.
+                  fano=nan;                                         % otherwise, not enough ISI, so fano=nan.
               end
-              instant_freq = 1/( mean(ISI)/Fs );              % Compute instantaneous freq.
+              instant_freq = 1/( mean(ISI)/Fs );                    % Compute instantaneous freq.
               
               % Get the 1 step prediction.
               p = transition_matrix * p;
@@ -196,16 +196,16 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
               p = posterior / sum(posterior);
               p = transpose(p);
               
-              if all(isnan(p))                % if the data are omitted,
-                  p = [0.5; 0.5];             % ... then set p to unknown state.
+              if all(isnan(p))                                      % if the data are omitted,
+                  p = [0.5; 0.5];                                   % ... then set p to unknown state.
               end
               
-              prob = [prob, p];               % save the probabilities,
-              t    = [t, i/Fs];               % ... and the time
+              prob = [prob, p];                                     % save the probabilities,
+              t    = [t, i/Fs];                                     % ... and the time
               i = i + step_size;
           end
           
-          spindle_probabilities(i_channel).label       = channel;     % save results for this channel
+          spindle_probabilities(i_channel).label       = channel;   % save results for this channel
           spindle_probabilities(i_channel).prob        = prob(1,:);
           spindle_probabilities(i_channel).t           = t;
           spindle_probabilities(i_channel).Fs          = Fs;
