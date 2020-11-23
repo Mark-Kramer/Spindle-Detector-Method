@@ -6,8 +6,9 @@
 %       hdr.info.sfreq      = sampling frequency [Hz]
 %       hdr.info.ch_names   = cell of channel names.
 %  options
-%       LSM_spindle_probabilities(data, hdr, 'MinPeakPromience', X) sets MinPeakPromience to X.
-%       LSM_spindle_probabilities(data, hdr, 'StartFrequency', X, 'StopFrequency', Y) sets spindle analysis to frequencies [X,Y].
+%       options.MinPeakProminence  = sets MinPeakPromience.
+%       options.StartFrequency     = sets spindle analysis to frequencies [X,Y].
+%              .StopFrequency        NOTE: must set both Start and Stop frequencies.
 %
 % OUTPUT:
 %  spindle_probabilities = [channels] structure with ...
@@ -26,18 +27,15 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
   feature = 'broadband';                                            % ... is broadband.
   
   if nargin>2                                                       % ---- Adjust default settings. ----
-      if ~isempty(find(strcmp(options, 'MinPeakPromience')))        % Set minPeakProminence for Fano step.
-          i0 = find(strcmp(options, 'MinPeakPromience'));
-          MinPeakProminence = options{i0+1};
+      if isfield(options,'MinPeakProminence')                       % Set MinPeakProminence for Fano step.
+          MinPeakProminence = options.MinPeakProminence;
       else
           MinPeakProminence = 2e-6;
       end
           
-      if ~isempty(find(strcmp(options, 'StartFrequency')))          % Set frequencies for narrowband analsysis.
-          i0 = find(strcmp(options, 'StartFrequency'));
-          start_frequency = options{i0+1};
-          i0 = find(strcmp(options, 'StopFrequency'));
-          stop_frequency  = options{i0+1};
+      if isfield(options,'StartFrequency')                          % Set frequencies for narrowband analsysis.
+          start_frequency = options.StartFrequency;
+          stop_frequency  = options.StopFrequency;
           feature = 'narrowband';
       end
   end
