@@ -33,8 +33,8 @@ If your code stops, and you encounter this returned text:
 
 `Are your data in microvolts? If not, set options.MinPeakProminence`
 
-Then you must add a **third and fourth input** to `LSM_spindle_probabilities`:
+Then you must add a **third input** to `LSM_spindle_probabilities`:
 
-`spindle_prob = LSM_spindle_probabilities(data, hdr, 'MinPeakPromience', X)`
+`spindle_prob = LSM_spindle_probabilities(data, hdr, options)`
 
-where `X` is a number indicating how much the peak must "stand out" to be identified. See [here](https://www.mathworks.com/help/signal/ref/findpeaks.html#buff2uu).
+where `options.MinPeakProminence` is a number indicating how much the peak must "stand out" to be identified. See [here](https://www.mathworks.com/help/signal/ref/findpeaks.html#buff2uu).
