@@ -21,6 +21,9 @@
 
 function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
 
+  keep_diagnostics = 0;                                             % Flag to return diagnostics (=0 default, =1 expert mode)
+  verbose          = 0;                                             % Flag to print out info     (=1 default, =0 expert mode)
+
   MinPeakProminence = 2e-6;                                         % Default value for HD scalp EEG.
   start_frequency = [];                                             % 9-15 Hz analysis
   stop_frequency  = [];
@@ -40,11 +43,16 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
       end
   end
 
-  fprintf(['Detecting spindles with spectral features: ' feature ' ' num2str(start_frequency) ' ' num2str(stop_frequency) '\n'])                                 
+  if verbose; fprintf(['Detecting spindles with spectral features: ' feature ' ' num2str(start_frequency) ' ' num2str(stop_frequency) '\n']); end                                 
                                              
   % Build filter 3-25 Hz.
   Fs = hdr.info.sfreq;
-  bpFilt = designfilt('bandpassfir', ...
+  filename = ['bpFilt_' num2str(Fs)];
+  if isfile([filename '.mat'])                                  	% This step can be very slow,
+      load(filename, 'bpFilt')                                      % ... so load pre-existing filter,
+      if verbose; fprintf(['Loading pre-computed bandpass filter. \n']); end
+  else
+      bpFilt = designfilt('bandpassfir', ...                        % .... or compute it.
       'StopbandFrequency1', 1, ...
       'PassbandFrequency1', 3, ...
       'PassbandFrequency2', 25, ...
@@ -53,6 +61,9 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
       'StopbandAttenuation1', 40, ...
       'StopbandAttenuation2', 20, ...
       'SampleRate', Fs);
+      save(filename, 'bpFilt')
+      if verbose; fprintf(['Save bandpass filter for ' num2str(Fs) ' Hz data. \n']); end
+  end
   
   % Make sure to use the MATLAB version of findpeaks.
   current_dir = pwd;                                                % Get current directory.
@@ -64,13 +75,13 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
 
   electrodes_to_analyze = hdr.info.ch_names;
   K = length(electrodes_to_analyze);  
-  spindle_probabilities = struct('label',cell(K,1),'prob',cell(K,1), 't',cell(K,1), 'Fs',cell(K,1));
+  spindle_probabilities = struct('label',cell(K,1),'prob',cell(K,1), 't',cell(K,1), 'Fs',cell(K,1), 'params',cell(1));
   
   for i_channel = 1:K                                               % NOTE: This can be parfor
     
-      [likelihood, mu, params, sigma, transition_matrix] = load_inputs();  
+      [likelihood, mu, params, sigma, transition_matrix] = load_inputs(verbose);  
       channel = electrodes_to_analyze{i_channel};
-      fprintf(['... ' num2str(channel) '(' num2str(i_channel) ' of ' num2str(length(electrodes_to_analyze)) ') \n'])
+      if verbose; fprintf(['... ' num2str(channel) '(' num2str(i_channel) ' of ' num2str(length(electrodes_to_analyze)) ') \n']); end
       
       i0 = find(strcmp(hdr.info.ch_names, channel));
         
@@ -79,7 +90,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
           d = data(i0,:);                                           % Get channel to analyze.  
 
           if any(isnan(d))
-              fprintf(['... detected NaNs in data, replacing with 0s for filter only. \n'])
+              if verbose; fprintf(['... detected NaNs in data, replacing with 0s for filter only. \n']); end
               d0 = d; d0(isnan(d0))=0;
               dfilt = filtfilt(bpFilt, d0);
           else
@@ -88,13 +99,20 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
           
           extent = max(d) - min(d);
           if (MinPeakProminence == 2e-6) && (extent > 300e-6 || extent < 10e-6)
-              fprintf(['Are your data in microvolts? If not, set options.MinPeakProminence \n'])
-              break
+              warning(['Extent ' num2str(extent) '. Are your data in microvolts? If not, set options.MinPeakProminence \n'])
           end
 
           % Initialize
           p = [0.5; 0.5];
           [prob, t] = deal([]);
+          if keep_diagnostics
+              if verbose; fprintf(['... keeping diagnostics. \n']); end
+              diagnostics.pow_theta    = [];
+              diagnostics.pow_9_15     = [];
+              diagnostics.mean_IPI     = [];
+              diagnostics.fano         = [];
+              diagnostics.instant_freq = [];
+          end
           window_size = round(params.window_duration*Fs);
           step_size   = round(params.step_duration*Fs);
           time_to_analyze = length(d)-window_size;
@@ -107,7 +125,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
               d0        = d(interval);
               d0        = detrend(d0);
               pow       = abs(fft(hann(length(d0)).*d0', round(Fs)));
-              pow       = pow / sum(pow);
+              pow       = pow / sum(pow(2:51));                     % Scale power by (1-50) Hz.
               
               pow_theta = pow(params.theta_index);
               pow_9_15  = mean(pow(params.nine_15_index));
@@ -121,17 +139,17 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
               [~, neg_locs] = findpeaks_vMAT(-d0, 'MinPeakDistance', MinPeakDistance, 'MinPeakProminence',MinPeakProminence);
               
               if length(pos_locs)>1 && length(neg_locs)>1           % if you have more than 1 peak, and more than 1 trough,
-                  ISI  = [diff(pos_locs) diff(neg_locs)];           % ... then compute ISI for each, and average.
+                  IPI  = [diff(pos_locs) diff(neg_locs)]/Fs*1000;   % ... then compute IPI in [ms] for each, and average.
               else
-                  ISI  = nan;                                       % otherwise, not enough points, so ISI = nan.
+                  IPI  = nan;                                       % otherwise, not enough points, so IPI = nan.
               end
               
-              if length(ISI)>1                                      % if you have more than 1 ISI,
-                  fano = var(ISI)/mean(ISI);                        % ... then compute the fano factor.
+              if length(IPI)>1                                      % if you have more than 1 IPI,
+                  fano = var(IPI)/mean(IPI);                        % ... then compute the fano factor.
               else
-                  fano=nan;                                         % otherwise, not enough ISI, so fano=nan.
+                  fano=nan;                                         % otherwise, not enough IPI, so fano=nan.
               end
-              instant_freq = 1/( mean(ISI)/Fs );                    % Compute instantaneous freq.
+              instant_freq = 1/( mean(IPI)/1000 );                  % Compute instantaneous freq.
               
               % Get the 1 step prediction.
               p = transition_matrix * p;
@@ -200,6 +218,14 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
               
               prob = [prob, p];                                     % save the probabilities,
               t    = [t, i/Fs];                                     % ... and the time
+              if keep_diagnostics
+                  diagnostics.pow_theta    = [diagnostics.pow_theta, pow_theta];
+                  diagnostics.pow_9_15     = [diagnostics.pow_9_15,  pow_9_15];
+                  diagnostics.mean_IPI     = [diagnostics.mean_IPI,  mean(IPI)];
+                  diagnostics.fano         = [diagnostics.fano,      fano];
+                  diagnostics.instant_freq = [diagnostics.instant_freq, instant_freq];
+              end
+                  
               i = i + step_size;
           end
           
@@ -207,20 +233,22 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
           spindle_probabilities(i_channel).prob        = prob(1,:);
           spindle_probabilities(i_channel).t           = t;
           spindle_probabilities(i_channel).Fs          = Fs;
+          if keep_diagnostics
+              spindle_probabilities(i_channel).diagnostics = diagnostics;
+          end
+          
       end
-            
+      spindle_probabilities(i_channel).params = params;
   end
-  
+
 end 
 
-function [likelihood, mu, params, sigma, transition_matrix] = load_inputs()
-  % Use default likelihood file (trained on Chu-lab CECTS data). Don't alter this unless you know what you're doing.
-  load('likelihood_and_transition_matrix_LSM_LOO_min_manual_duration_0_0.5_0.1_pt999_PDF_use_all_data_compute_all_features_chu.mat')
-  fprintf(['... using default likelihood file. \n'])
-  
-  % Use alternative likelihood file trained on Manoach-lab data.
-  %load('likelihood_and_transition_matrix_LSM_LOO_min_manual_duration_0_0.5_0.1_pt999_PDF_use_all_data_compute_all_features_manoach.mat')
-  %fprintf(['... using alternative likelihood file. \n'])
+function [likelihood, mu, params, sigma, transition_matrix] = load_inputs(verbose)
+  % Don't alter this unless you know what you're doing.
+  warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
+  filename = 'likelihood_and_transition_matrix_1_50_normalization_27-Apr-2021.mat';
+  load(filename)
+  if verbose; fprintf(['... using likelihood file ' filename '\n']); end
 end
 
 function [L0] = narrowband_likelihood(f, range)
