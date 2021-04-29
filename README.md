@@ -1,5 +1,9 @@
 # Spindle-Detector-Method
 
+This code was used for analysis in the publication [Kramer MA, Stoyell SM, Chinappen D, Ostrowski LM, Spencer ER, Morgan AK, Emerton BC, Jing J, Westover MB, Eden UT, Stickgold R, Manoach DS, Chu CJ *Focal Sleep Spindle Deficits Reveal Focal Thalamocortical Dysfunction and Predict Cognitive Deficits in Sleep Activated Developmental Epilepsy.* The Journal of Neuroscience 41, no. 8 (February 24, 2021): 1816–29](https://www.jneurosci.org/content/41/8/1816).
+
+**Please find bug fixes and improvements on other branches.**
+
 The latent state (LS) detector runs in two steps:
 
 1. `spindle_prob = LSM_spindle_probabilities(d, hdr);`
