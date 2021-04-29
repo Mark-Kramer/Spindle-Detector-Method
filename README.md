@@ -4,6 +4,8 @@ This code was used for analysis in the publication [Kramer MA, Stoyell SM, China
 
 **Please find bug fixes and improvements on other branches.**
 
+----
+
 The latent state (LS) detector runs in two steps:
 
 1. `spindle_prob = LSM_spindle_probabilities(d, hdr);`
