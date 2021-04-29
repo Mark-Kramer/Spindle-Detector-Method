@@ -28,14 +28,21 @@ function [spindle_det] = LSM_spindle_detections(spindle_probabilities, varargin)
   
   spindle_det = [];
   for k=1:length(spindle_probabilities)                                 % For each channel,
-  
+      
       %%%% 1) Get initial set of detections. ------------------------------
       prob = spindle_probabilities(k).prob;                             % Get probability for this channel.
       t    = spindle_probabilities(k).t;                                % Get time for this channel.
       good = find(prob >= prob_threshold);                              % Where probability > threshold,
-      detections = zeros(size(prob));   
+      detections = zeros(size(prob));
       detections(good) = 1;                                             % ... set detections = 1.
       
+      if isempty(detections)                                            % If no detections,
+          spindle_det(k).startSample = [];                              % ... return empty results.
+          spindle_det(k).endSample   = [];
+          spindle_det(k).label       = spindle_probabilities(k).label;
+          spindle_det(k).Fs          = spindle_probabilities(k).Fs;
+      else                                                              % Otherwise, there are detections.
+
       if all(detections)
           startTimes = t(1);                                            % Catch case of all data = detection
           endTimes   = t(end);
@@ -63,13 +70,17 @@ function [spindle_det] = LSM_spindle_detections(spindle_probabilities, varargin)
       end
       startTimes = startTimes(isfinite(startTimes));                    %  Keep only spindles not too close.
       endTimes   = endTimes(isfinite(endTimes));
-              
-      %%%% 4) Return detections for this elec. ----------------------------
+      
+      %%%% 4) Shift end times to more accurately represent detections.
+      endTimes   = endTimes   + spindle_probabilities(k).params.step_duration;     % shift end time by one more step.
+      
+      %%%% 5) Return detections for this elec. ----------------------------
       Fs = spindle_probabilities(k).Fs;
       spindle_det(k).startSample = round(startTimes * Fs);
       spindle_det(k).endSample   = round(endTimes * Fs);
       spindle_det(k).label       = spindle_probabilities(k).label;
       spindle_det(k).Fs          = Fs;
+      end
       
   end
   
