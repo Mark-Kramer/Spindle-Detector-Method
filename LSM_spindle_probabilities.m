@@ -79,7 +79,7 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
   
   for i_channel = 1:K                                               % NOTE: This can be parfor
     
-      [likelihood, mu, params, sigma, transition_matrix] = load_inputs(verbose);  
+      [likelihood, mu, params, sigma, transition_matrix] = load_inputs(verbose,options);  
       channel = electrodes_to_analyze{i_channel};
       if verbose; fprintf(['... ' num2str(channel) '(' num2str(i_channel) ' of ' num2str(length(electrodes_to_analyze)) ') \n']); end
       
@@ -243,10 +243,16 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
 
 end 
 
-function [likelihood, mu, params, sigma, transition_matrix] = load_inputs(verbose)
+function [likelihood, mu, params, sigma, transition_matrix] = load_inputs(verbose,options)
   % Don't alter this unless you know what you're doing.
   warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
-  filename = 'likelihood_and_transition_matrix_1_50_normalization_27-Apr-2021.mat';
+  if nargin>1                                                 % ---- Adjust default settings. ----
+      if isfield(options,'Custom_L_TM')                       % Set path of likelihood_and_transition_matrix to load.
+          filename = options.Custom_L_TM;
+      else
+          filename = 'likelihood_and_transition_matrix_1_50_normalization_27-Apr-2021.mat';
+      end
+  end
   load(filename)
   if verbose; fprintf(['... using likelihood file ' filename '\n']); end
 end
