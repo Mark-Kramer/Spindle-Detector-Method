@@ -27,6 +27,26 @@ where
 
 Step (1) is slow, step (2) is fast.
 
+---
+
+# To visualize spindles
+
+`LSM_spindle_visualizer(data, hdr, spindle_det, channel)`
+
+![alt text](https://github.com/Mark-Kramer/Spindle-Detector-Method/blob/master/example_spindles.png)
+
+----
+
+# Example
+| Code |  Note |
+| --- | --- |
+|`load('example_data.mat')`  |  Simulated `data` and `hdr`, available [here](https://github.com/Mark-Kramer/Spindle-Detector-Method/blob/master/example_data.mat).
+|`spindle_prob = LSM_spindle_probabilities(data, hdr);`| Compute probabilities of spindles.
+|`spindle_det  = LSM_spindle_detections(spindle_prob);`| Convert probabilities to detections.
+|`LSM_spindle_visualizer(data, hdr, spindle_det, 'Example')` | Visualize the results.
+
+----
+
 # Advanced use
 
 For narrowband analysis, include a **third input** to `LSM_spindle_probabilities`:
@@ -46,14 +66,6 @@ options.StartFrequency = 9;
 options.StopFrequency  = 12;
 spindle_prob = LSM_spindle_probabilities(data, hdr, options)
 ```
-
-----
-
-# To visualize spindles
-
-`LSM_spindle_visualizer(data, hdr, spindle_det, channel)`
-
-![alt text](https://github.com/Mark-Kramer/Spindle-Detector-Method/blob/master/example_spindles.png)
 
 ----
 
