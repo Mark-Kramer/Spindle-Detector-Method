@@ -1,10 +1,15 @@
 % Compute the probability of a spindle in 0.5 s intervals.
 %
 % INPUTS:
-%  data = [channels, time]
-%  hdr  = structure that MUST HAVE ...
-%       hdr.info.sfreq      = sampling frequency [Hz]
-%       hdr.info.ch_names   = cell of channel names.
+%
+%  data:                [channels, time]
+%
+%  hdr:                 structure that MUST HAVE ...
+%                           hdr.info.sfreq      = sampling frequency [Hz]
+%                           hdr.info.ch_names   = cell of channel names.
+%
+%  parameter_filename:  The parameter file for spindle detector features
+%                           must be a .mat file.
 %  options
 %       options.MinPeakProminence  = sets MinPeakPromience.
 %       options.StartFrequency     = sets spindle analysis to frequencies [X,Y].
@@ -19,17 +24,17 @@
 %
 % The output is typically an input to function LSM_spindle_detections.m
 
-function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
+function spindle_probabilities = LSM_spindle_probabilities(data, hdr, parameter_filename, options)
 
   keep_diagnostics = 0;                                             % Flag to return diagnostics (=0 default, =1 expert mode)
-  verbose          = 0;                                             % Flag to print out info     (=1 default, =0 expert mode)
+  verbose          = 1;                                             % Flag to print out info     (=1 default, =0 expert mode)
 
   MinPeakProminence = 2e-6;                                         % Default value for HD scalp EEG.
   start_frequency = [];                                             % 9-15 Hz analysis
   stop_frequency  = [];
   feature = 'broadband';                                            % ... is broadband.
   
-  if nargin>2                                                       % ---- Adjust default settings. ----
+  if nargin>3                                                       % ---- Adjust default settings. ----
       if isfield(options,'MinPeakProminence')                       % Set MinPeakProminence for Fano step.
           MinPeakProminence = options.MinPeakProminence;
       else
@@ -78,11 +83,9 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
   spindle_probabilities = struct('label',cell(K,1),'prob',cell(K,1), 't',cell(K,1), 'Fs',cell(K,1), 'params',cell(1));
   
   for i_channel = 1:K                                               % NOTE: This can be parfor
-      if nargin>2
-          [likelihood, mu, params, sigma, transition_matrix] = load_inputs(verbose,options);
-      else
-          [likelihood, mu, params, sigma, transition_matrix] = load_inputs(verbose);
-      end
+     
+      [likelihood, mu, params, sigma, transition_matrix] = load_inputs(parameter_filename,verbose);
+      
       channel = electrodes_to_analyze{i_channel};
       if verbose; fprintf(['... ' num2str(channel) '(' num2str(i_channel) ' of ' num2str(length(electrodes_to_analyze)) ') \n']); end
       
@@ -246,17 +249,11 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, options)
 
 end 
 
-function [likelihood, mu, params, sigma, transition_matrix] = load_inputs(verbose,options)
+function [likelihood, mu, params, sigma, transition_matrix] = load_inputs(parameter_filename,verbose)
   % Don't alter this unless you know what you're doing.
   warning('off', 'MATLAB:dispatcher:UnresolvedFunctionHandle');
-  filename = 'AllAges_Spindle_Detector.mat';
-  if nargin>1                                                 % ---- Adjust default settings. ----
-      if isfield(options,'Custom_L_TM')                       % Set path of likelihood_and_transition_matrix to load.
-          filename = options.Custom_L_TM;
-      end
-  end
-  load(filename)
-  if verbose; fprintf(['... using likelihood file ' filename '\n']); end
+  load(parameter_filename)
+  if verbose; fprintf(['... using likelihood file ' parameter_filename '\n']); end
 end
 
 function [L0] = narrowband_likelihood(f, range)
