@@ -8,6 +8,10 @@
 
 # Parameter files
 
+- The parameter file specifies the means and standard deviations of the parameter distributions used to detect spindles.
+- The parameter values differ (slighlty) depending on the type and quantity of data used to train the method.
+- See the linked publications below for details.
+
 | Publication | Parameter File |
 | --- | --- |
 | [Kramer et al., 2021](https://www.jneurosci.org/content/41/8/1816) | `Original_Spindle_Detector.mat` |
@@ -20,7 +24,7 @@
 
 # Example
 
-- This example applies the spindle detector to 60 s of simulated data, available [here](https://github.com/Mark-Kramer/Spindle-Detector-Method/blob/master/example_data.mat).
+- This example applies the spindle detector to 60 s of simulated `example_data.mat`, available [here](https://github.com/Mark-Kramer/Spindle-Detector-Method/blob/master/example_data.mat).
 - There are 5 spindles near times (10 s, 20 s, 30 s, 40 s, 50 s).
 - We use the spindle detector with parameters from [Kwon et al., 2023](https://doi.org/10.1093/sleep/zsad017).
 
