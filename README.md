@@ -22,13 +22,13 @@
 
 - This example applies the spindle detector to 60 s of simulated data, available [here](https://github.com/Mark-Kramer/Spindle-Detector-Method/blob/master/example_data.mat).
 - There are 5 spindles near times (10 s, 20 s, 30 s, 40 s, 50 s).
-- We use the spindle detector with parameters from [Kwon et al., 2023](https://doi.org/10.1093/sleep/zsad017)
+- We use the spindle detector with parameters from [Kwon et al., 2023](https://doi.org/10.1093/sleep/zsad017).
 
 
 | Code |  Note |
 | --- | --- |
 |`load('example_data.mat')`  |  Simulated `data` and `hdr`.
-| `parameter_file = 'AllAges_Spindle_Detector'` | Use the parameter from [Kwon et al., 2023](https://doi.org/10.1093/sleep/zsad017)
+| `parameter_file = 'AllAges_Spindle_Detector'` | Choose the parameter file.
 |`spindle_prob = LSM_spindle_probabilities(data, hdr, parameter_file);`| Compute probabilities of spindles.
 |`spindle_det  = LSM_spindle_detections(spindle_prob);`| Convert probabilities to detections.
 |`LSM_spindle_visualizer(data, hdr, spindle_det, 'Example')` | Visualize the results; see [here](#to-visualize-spindles).
