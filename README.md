@@ -1,29 +1,58 @@
 # Spindle-Detector-Method
 
-This repository contains the spindle detector method used in [Kramer MA, Stoyell SM, Chinappen D, Ostrowski LM, Spencer ER, Morgan AK, Emerton BC, Jing J, Westover MB, Eden UT, Stickgold R, Manoach DS, Chu CJ *Focal Sleep Spindle Deficits Reveal Focal Thalamocortical Dysfunction and Predict Cognitive Deficits in Sleep Activated Developmental Epilepsy.* The Journal of Neuroscience 41, no. 8 (February 24, 2021): 1816–29](https://www.jneurosci.org/content/41/8/1816).
+- This repository contains the spindle detector methods used in different publications.
+- While the method is the same, the parameter files differ. You must choose a parameter file to use.
+- An [example](#example) below indicates how to apply the detector.
 
-# Versions
+---
 
-- The branch [`master`](https://github.com/Mark-Kramer/Spindle-Detector-Method) contains the most up-to-date, working version of the spinlde detector.
+# Parameter files
 
-- For the original method applied in 2021 publication, see this branch [`j-neurosci-2021-publication-code`](https://github.com/Mark-Kramer/Spindle-Detector-Method/tree/j-neurosci-2021-publication-code).
- 
+| Publication | Parameter File |
+| --- | --- |
+| [Kramer et al., 2021](https://www.jneurosci.org/content/41/8/1816) | `Original_Spindle_Detector.mat` |
+| [Kwon et al., 2023](https://doi.org/10.1093/sleep/zsad017) | `AllAges_Spindle_Detector.mat` |
+| [McLaren et al., 2023](https://doi.org/10.1002/acn3.51840) | `ESES_Spindle_Detector.mat` |
+| [Berja et al., 2024](https://doi.org/10.1016/j.clinph.2024.08.017) | `Infant_Spindle_Detector.mat` |
+
+
+----
+
+# Example
+
+- This example applies the spindle detector to 60 s of simulated data, available [here](https://github.com/Mark-Kramer/Spindle-Detector-Method/blob/master/example_data.mat).
+- There are 5 spindles near times (10 s, 20 s, 30 s, 40 s, 50 s).
+- We use the spindle detector with parameters from [Kwon et al., 2023](https://doi.org/10.1093/sleep/zsad017)
+
+
+| Code |  Note |
+| --- | --- |
+|`load('example_data.mat')`  |  Simulated `data` and `hdr`.
+| `parameter_file = 'AllAges_Spindle_Detector'` | Use the parameter from [Kwon et al., 2023](https://doi.org/10.1093/sleep/zsad017)
+|`spindle_prob = LSM_spindle_probabilities(data, hdr, parameter_file);`| Compute probabilities of spindles.
+|`spindle_det  = LSM_spindle_detections(spindle_prob);`| Convert probabilities to detections.
+|`LSM_spindle_visualizer(data, hdr, spindle_det, 'Example')` | Visualize the results; see [here](#to-visualize-spindles).
+
+---
+
 # Basic use
 
-The latent state (LS) detector runs in two steps:
+The latent state model (LSM) spindle detector runs in two steps:
 
-1. `spindle_prob = LSM_spindle_probabilities(d, hdr);`
+1. `spindle_prob = LSM_spindle_probabilities(data, hdr, parameter_file);`
 2. `spindle_det  = LSM_spindle_detections(spindle_prob);`
 
 where
 
-`d` = the data, [channels x time points]
+`data` = the data, [channels x time points]
 
 `hdr` = structure that **must have**:
 
 `hdr.info.sfreq`      = sampling frequency (Hz).
   
 `hdr.info.ch_names`   = cell of channel names.
+
+`parameter_file`  = specifiy which [parameter file](#parameter-files) to use.
 
 Step (1) is slow, step (2) is fast.
 
@@ -35,15 +64,6 @@ Step (1) is slow, step (2) is fast.
 
 ![alt text](https://github.com/Mark-Kramer/Spindle-Detector-Method/blob/master/example_spindles.png)
 
-----
-
-# Example
-| Code |  Note |
-| --- | --- |
-|`load('example_data.mat')`  |  Simulated `data` and `hdr`, available [here](https://github.com/Mark-Kramer/Spindle-Detector-Method/blob/master/example_data.mat).
-|`spindle_prob = LSM_spindle_probabilities(data, hdr);`| Compute probabilities of spindles.
-|`spindle_det  = LSM_spindle_detections(spindle_prob);`| Convert probabilities to detections.
-|`LSM_spindle_visualizer(data, hdr, spindle_det, 'Example')` | Visualize the results.
 
 ----
 
