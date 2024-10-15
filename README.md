@@ -80,6 +80,7 @@ For narrowband analysis, include a **third input** to `LSM_spindle_probabilities
 where
 
 `options.StartFrequency`     = low frequency for narrowband analysis [Hz].
+
 `options.StopFrequency`      = high frequency for narrowband analysis [Hz].
 
 Both options must be specified.  For example, to focus analysis on 9-12 Hz, 
@@ -88,21 +89,23 @@ Both options must be specified.  For example, to focus analysis on 9-12 Hz,
 options                = []
 options.StartFrequency = 9;
 options.StopFrequency  = 12;
-spindle_prob = LSM_spindle_probabilities(data, hdr, options)
+spindle_prob = LSM_spindle_probabilities(data, hdr, parameter_file, options)
 ```
 
 ----
 
-# When the code warns (`Are your data in microvolts?`)
+# When the code warns (`Detector expecting spindles of relative height 2e-6.`)
 
 If the code produces the warning:
 
-`Are your data in microvolts? If not, set options.MinPeakProminence`
+*Detector expecting spindles of relative height 2e-6.*
+*This might be fine. Look at the detections.*
+*If detections are poor, consider setting 'options.MinPeakProminence'*
 
-Then consider adding a **third input** to `LSM_spindle_probabilities`:
+Then consider adding an `options` input to `LSM_spindle_probabilities`:
 
-`spindle_prob = LSM_spindle_probabilities(data, hdr, options)`
+`spindle_prob = LSM_spindle_probabilities(data, hdr, parameter_file, options)`
 
 where `options.MinPeakProminence` is a number indicating how much the peak must "stand out" to be identified. See [here](https://www.mathworks.com/help/signal/ref/findpeaks.html#buff2uu).
 
-The code will run, but results might be meaningless.
+Without this options, the spindle detections might be fine. However, if the spindle detections look poor, then consider adjusting this option.
