@@ -26,7 +26,7 @@
 
 - This example applies the spindle detector to 60 s of simulated `example_data.mat`, available [here](https://github.com/Mark-Kramer/Spindle-Detector-Method/blob/master/example_data.mat).
 - There are 5 spindles near times (10 s, 20 s, 30 s, 40 s, 50 s).
-- We use the spindle detector with parameters from [Kwon et al., 2023](https://doi.org/10.1093/sleep/zsad017).
+- In this example, we use the spindle detector with parameters from [Kwon et al., 2023](https://doi.org/10.1093/sleep/zsad017).
 
 
 | Code |  Note |
