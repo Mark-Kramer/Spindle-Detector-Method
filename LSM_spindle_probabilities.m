@@ -3,6 +3,7 @@
 % INPUTS:
 %
 %  data:                [channels, time]
+%                           Detector trained on scalp EEG in units of V.
 %
 %  hdr:                 structure that MUST HAVE ...
 %                           hdr.info.sfreq      = sampling frequency [Hz]
@@ -11,7 +12,8 @@
 %  parameter_filename:  The parameter file for spindle detector features
 %                           must be a .mat file.
 %  options
-%       options.MinPeakProminence  = sets MinPeakPromience.
+%       options.MinPeakProminence  = sets MinPeakPromience (units of V for scalp EEG)
+%                                    default is 2e-6 V or 2 microvolts
 %       options.StartFrequency     = sets spindle analysis to frequencies [X,Y].
 %              .StopFrequency        NOTE: must set both Start and Stop frequencies.
 %
@@ -105,7 +107,8 @@ function spindle_probabilities = LSM_spindle_probabilities(data, hdr, parameter_
           
           extent = max(d) - min(d);
           if (MinPeakProminence == 2e-6) && (extent > 300e-6 || extent < 10e-6)
-              warning(['Extent ' num2str(extent) '. Are your data in microvolts? If not, set options.MinPeakProminence \n'])
+              warning_text = sprintf(['Extent ' num2str(extent) '. Detector expecting spindles of relative height 2e-6. \nThis might be fine. Look at the detections. \nIf detections are poor, consider setting `options.MinPeakProminence` \n']);
+              warning(warning_text)
           end
 
           % Initialize
